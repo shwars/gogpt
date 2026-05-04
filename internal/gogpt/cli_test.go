@@ -1,8 +1,10 @@
 package gogpt
 
 import (
+	"bytes"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -55,5 +57,21 @@ func TestMapFile(t *testing.T) {
 	}
 	if got != "hello" {
 		t.Fatalf("mapped = %q", got)
+	}
+}
+
+func TestHelpOutputIncludesCopyright(t *testing.T) {
+	var out, errOut bytes.Buffer
+	code := Main([]string{"--help"}, nil, &out, &errOut)
+	if code != 0 {
+		t.Fatalf("code = %d stderr = %s", code, errOut.String())
+	}
+	help := out.String()
+	if !strings.Contains(help, "gogpt: OpenAI-compatible Responses API CLI") {
+		t.Fatalf("help = %q", help)
+	}
+	if !strings.Contains(help, "(c) 2026 SHWARSICO Software, Vibe Coding Dept.") ||
+		!strings.Contains(help, "(c) 2026 Dmitri Soshnikov, t.me/shwarsico") {
+		t.Fatalf("copyright missing from help = %q", help)
 	}
 }

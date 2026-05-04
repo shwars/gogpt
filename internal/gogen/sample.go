@@ -1,0 +1,41 @@
+package gogen
+
+const sampleConfig = `model "gpt" {
+  model_name = "gpt-image-2"
+  base_url = "https://api.openai.com/v1"
+  api_key = "%OPENAI_API_KEY%"
+  default = true
+}
+
+model "gpt1.5" {
+  model_name = "gpt-image-1.5"
+  base_url = "https://api.openai.com/v1"
+  api_key = "%OPENAI_API_KEY%"
+}
+
+model "gpt1" {
+  model_name = "gpt-image-1"
+  base_url = "https://api.openai.com/v1"
+  api_key = "%OPENAI_API_KEY%"
+}
+
+model "yart" {
+  model_name = "art://%folder_id%/aliceai-image-art-3.0/latest"
+  base_url = "https://ai.api.cloud.yandex.net/v1"
+  api_key = "%api_key%"
+  project = "%folder_id%"
+}
+
+size "auto" = "auto"
+size "square" = "1024x1024"
+size "landscape" = "1536x1024"
+size "portrait" = "1024x1536"
+size "square-2k" = "2048x2048"
+size "wide-2k" = "2048x1152"
+size "wide-4k" = "3840x2160"
+size "portrait-4k" = "2160x3840"
+size "tiny" = "256x256"
+size "small" = "512x512"
+size "dalle-wide" = "1792x1024"
+size "dalle-portrait" = "1024x1792"
+`

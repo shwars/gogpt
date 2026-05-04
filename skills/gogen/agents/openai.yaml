@@ -1,0 +1,4 @@
+interface:
+  display_name: "Gogen Image Generator"
+  short_description: "Generate images with installed gogen CLI"
+  default_prompt: "Use $gogen to generate an image and save it to a specified file."

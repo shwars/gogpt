@@ -21,17 +21,50 @@ type CLIArgs struct {
 	Code        bool
 	OutputDir   string
 	Stream      bool
+	Help        bool
 	Param1      string
 	Param2      string
 	Param3      string
 	Query       []string
 }
 
+const helpText = `gogpt: OpenAI-compatible Responses API CLI
+
+Usage:
+  gogpt [options] prompt text
+  gogpt [options] "prompt text"
+  echo prompt text | gogpt [options] -
+
+Options:
+  -m, --model NAME         Select model alias from gogpt.config
+  -p, --template VALUE     Template name, literal template, or @file
+  -s, --system VALUE       System message name, literal message, or @file
+  -t, --temperature VALUE  Model temperature
+  -c, --chat               Continue into interactive chat
+      --image PATH         Attach image file; repeat for multiple images
+      --web                Enable web search
+      --web-detail VALUE   low, med, or hi
+      --code               Enable Code Interpreter
+      --output-dir PATH    Directory for Code Interpreter output files
+      --stream             Stream response text
+  -1 VALUE                 Template parameter 1
+  -2 VALUE                 Template parameter 2
+  -3 VALUE                 Template parameter 3
+  -h, --help               Print this help
+
+(c) 2026 SHWARSICO Software, Vibe Coding Dept.
+(c) 2026 Dmitri Soshnikov, t.me/shwarsico
+`
+
 func Main(argv []string, stdin *os.File, stdout, stderr io.Writer) int {
 	args, err := ParseArgs(argv)
 	if err != nil {
 		fmt.Fprintln(stderr, err)
 		return 2
+	}
+	if args.Help {
+		fmt.Fprint(stdout, helpText)
+		return 0
 	}
 	cfg, err := LoadConfig("")
 	if err != nil {
@@ -233,6 +266,8 @@ func ParseArgs(argv []string) (CLIArgs, error) {
 			args.OutputDir = v
 		case "--stream":
 			args.Stream = true
+		case "-h", "--help":
+			args.Help = true
 		case "-1":
 			v, err := next()
 			if err != nil {

@@ -3,14 +3,18 @@
 `gogpt` is a dependency-free Go clone of YoGPT: a small command-line utility
 for calling GPT-like models through an OpenAI-compatible Responses API.
 
+The repository also includes `gogen`, a sibling utility for image generation
+through OpenAI-compatible Images API providers.
+
 ## Build
 
 ```bash
 go build ./cmd/gogpt
+go build ./cmd/gogen
 ```
 
-This produces `gogpt.exe` on Windows. Put `gogpt.config` next to the executable,
-or set `GOGPT_CONFIG` to a config file path.
+This produces `gogpt.exe` and `gogen.exe` on Windows. Put each config next to
+its executable, or set `GOGPT_CONFIG` / `GOGEN_CONFIG` to a config file path.
 
 ## Usage
 
@@ -124,3 +128,117 @@ Model fields:
 
 The checked-in `gogpt.config` carries over the current YoGPT model aliases,
 templates, and system messages.
+
+## gogen
+
+Generate an image from a prompt:
+
+```bash
+gogen Draw a quiet street at night in watercolor
+```
+
+Read the prompt from stdin:
+
+```bash
+echo Draw a quiet street at night in watercolor | gogen -
+```
+
+Select a configured model, size alias, output file, and image count:
+
+```bash
+gogen -m yart -s landscape -n 1 -o street.png "Draw a quiet street at night in watercolor"
+```
+
+Use extra image-generation parameters:
+
+```bash
+gogen --quality high --format webp --background opaque --compression 90 "A product render of a glass teapot"
+```
+
+Use input/reference images. This switches `gogen` from image generation to the
+Images API edit endpoint:
+
+```bash
+gogen -i sketch.png -i palette.png -o result.png "Turn this sketch into a polished product illustration"
+```
+
+`gogen` options:
+
+- `-m`, `--model`: model alias from `gogen.config`.
+- `-o`, `--out`: output file or existing output directory.
+- `-s`, `--size`: literal size such as `1536x1024`, or a size alias.
+- `-i`, `--image`: input/reference image file; repeat for multiple images.
+- `-n`: number of images.
+- `-h`, `--help`: print help.
+- `--quality`: `low`, `medium`, `high`, `auto`, `standard`, or `hd`.
+- `--format`: `png`, `jpeg`, or `webp`.
+- `--background`: `auto`, `opaque`, or `transparent`.
+- `--compression`: integer from `0` to `100`.
+- `--moderation`: `auto` or `low`.
+- `--style`: `vivid` or `natural`.
+
+`gogen` config lookup order:
+
+1. `GOGEN_CONFIG`, if set.
+2. `gogen.config` next to the executable.
+3. `gogen.config` in the current working directory.
+
+Example `gogen.config`:
+
+~~~text
+model "gpt" {
+  model_name = "gpt-image-2"
+  base_url = "https://api.openai.com/v1"
+  api_key = "%OPENAI_API_KEY%"
+  default = true
+}
+
+model "yart" {
+  model_name = "art://%folder_id%/aliceai-image-art-3.0/latest"
+  base_url = "https://ai.api.cloud.yandex.net/v1"
+  api_key = "%api_key%"
+  project = "%folder_id%"
+}
+
+size "square" = "1024x1024"
+size "landscape" = "1536x1024"
+size "portrait" = "1024x1536"
+~~~
+
+All providers use `Authorization: Bearer <api_key>`. If `project` is set, it is
+sent as `OpenAI-Project`. The checked-in `gogen.config` includes `gpt`,
+`gpt1.5`, `gpt1`, `yart`, and common size aliases.
+
+### Codex skill
+
+This repository includes a redistributable Codex skill for using `gogen` from
+coding-agent workflows. The skill is packaged as `gogen-skill.zip` for release
+uploads.
+
+Before installing the skill, install and configure the `gogen` executable:
+
+1. Put `gogen.exe` in a directory on `PATH`, or add the directory containing
+   `gogen.exe` to `PATH`.
+2. Put `gogen.config` next to `gogen.exe`, or set `GOGEN_CONFIG` to the config
+   file path.
+3. Verify the installation:
+
+```powershell
+gogen --list-models
+```
+
+Then install the skill by unzipping `gogen-skill.zip` into your Codex skills
+directory. On Windows this is usually:
+
+```powershell
+Expand-Archive .\gogen-skill.zip -DestinationPath "$env:USERPROFILE\.codex\skills" -Force
+```
+
+After installation, the skill folder should be:
+
+```text
+%USERPROFILE%\.codex\skills\gogen
+```
+
+The skill assumes `gogen` is available on `PATH`; it does not search for
+`gogen.exe` beside the skill folder.
