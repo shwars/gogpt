@@ -9,6 +9,7 @@
 *.dylib
 
 # Release artifacts
+dist/
 gogen-skill.zip
 
 # Test binary, built with `go test -c`

@@ -1,0 +1,112 @@
+name: Release
+
+on:
+  workflow_dispatch:
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build release artifacts
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.26.x"
+          cache: true
+
+      - name: Run tests
+        run: go test ./...
+
+      - name: Build and package binaries
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          rm -rf dist
+          mkdir -p dist
+
+          build_target() {
+            local goos="$1"
+            local goarch="$2"
+            local archive="$3"
+            local ext="$4"
+            local package_dir="dist/package-${goos}-${goarch}"
+
+            rm -rf "$package_dir"
+            mkdir -p "$package_dir"
+
+            CGO_ENABLED=0 GOOS="$goos" GOARCH="$goarch" go build \
+              -buildvcs=false \
+              -trimpath \
+              -ldflags="-s -w" \
+              -o "$package_dir/gogpt${ext}" \
+              ./cmd/gogpt
+
+            CGO_ENABLED=0 GOOS="$goos" GOARCH="$goarch" go build \
+              -buildvcs=false \
+              -trimpath \
+              -ldflags="-s -w" \
+              -o "$package_dir/gogen${ext}" \
+              ./cmd/gogen
+
+            cp gogpt.config gogen.config README.md "$package_dir/"
+
+            if [[ "$archive" == *.zip ]]; then
+              (cd "$package_dir" && zip -qr "../$archive" .)
+            else
+              chmod +x "$package_dir/gogpt" "$package_dir/gogen"
+              tar -czf "dist/$archive" -C "$package_dir" .
+            fi
+          }
+
+          build_target windows amd64 gogpt-windows-amd64.zip .exe
+          build_target windows arm64 gogpt-windows-arm64.zip .exe
+          build_target darwin arm64 gogpt-darwin-arm64.tar.gz ""
+          build_target darwin amd64 gogpt-darwin-amd64.tar.gz ""
+          build_target linux amd64 gogpt-linux-amd64.tar.gz ""
+          build_target linux arm64 gogpt-linux-arm64.tar.gz ""
+
+      - name: Package gogen skill
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          rm -rf dist/skill-package
+          mkdir -p dist/skill-package/gogen
+          cp -R skills/gogen/. dist/skill-package/gogen/
+          (cd dist/skill-package && zip -qr ../gogen-skill.zip gogen)
+          rm -rf dist/skill-package
+
+      - name: List artifacts
+        shell: bash
+        run: |
+          set -euo pipefail
+          ls -lah dist
+
+      - name: Upload workflow artifacts
+        if: github.event_name == 'workflow_dispatch'
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-artifacts
+          path: |
+            dist/*.zip
+            dist/*.tar.gz
+          if-no-files-found: error
+
+      - name: Upload release assets
+        if: github.event_name == 'release'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh release upload "${{ github.event.release.tag_name }}" dist/*.zip dist/*.tar.gz --clobber

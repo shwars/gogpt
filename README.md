@@ -16,6 +16,56 @@ go build ./cmd/gogen
 This produces `gogpt.exe` and `gogen.exe` on Windows. Put each config next to
 its executable, or set `GOGPT_CONFIG` / `GOGEN_CONFIG` to a config file path.
 
+## Release binaries
+
+GitHub Releases provide prebuilt archives for the main desktop/server
+platforms:
+
+- `gogpt-windows-amd64.zip`
+- `gogpt-windows-arm64.zip`
+- `gogpt-darwin-arm64.tar.gz`
+- `gogpt-darwin-amd64.tar.gz`
+- `gogpt-linux-amd64.tar.gz`
+- `gogpt-linux-arm64.tar.gz`
+- `gogen-skill.zip`
+
+Each platform archive includes both tools, the sample configs, and this README.
+The skill archive includes only the redistributable Codex skill.
+
+To produce release assets manually without publishing a release:
+
+1. Open the repository on GitHub.
+2. Go to **Actions**.
+3. Select the **Release** workflow.
+4. Click **Run workflow** and choose the branch, usually `main`.
+5. Download the generated `release-artifacts` artifact from the workflow run.
+
+With GitHub CLI:
+
+```bash
+gh workflow run release.yml --ref main
+gh run watch
+```
+
+To publish release assets for a major release:
+
+1. Create and push a release tag such as `v1.0.0`.
+2. Create a GitHub Release for that tag.
+3. Click **Publish release**.
+4. Wait for the **Release** workflow to finish.
+5. The workflow attaches all platform archives and `gogen-skill.zip` to the
+   release.
+
+macOS binaries are not signed or notarized. Apple Silicon users should download
+`gogpt-darwin-arm64.tar.gz`; Intel Mac users should download
+`gogpt-darwin-amd64.tar.gz`. If needed, run:
+
+```bash
+chmod +x gogpt gogen
+```
+
+macOS Gatekeeper may also require allowing the binaries in System Settings.
+
 ## Usage
 
 Ask a question directly:
